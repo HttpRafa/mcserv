@@ -1,8 +1,15 @@
 require 'net/http'
 require 'json'
 
-$serverUrls = { custom: "https://kienitz.link/host/minecraft/installer/", paperMC: "https://api.papermc.io/v2/projects/" }
-$softwareTypes = { raper: "custom", paper: "paperMC", velocity: "paperMC" }
+$serverUrls = { 
+#    custom: "https://kienitz.link/host/minecraft/installer/", 
+    paperMC: "https://api.papermc.io/v2/projects/" 
+}
+$softwareTypes = {
+#    raper: "custom", 
+    paper: "paperMC", 
+    velocity: "paperMC" 
+}
 
 class Version 
 
