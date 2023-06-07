@@ -106,7 +106,16 @@ def request_software_version(provider, software)
             puts "Error: #{response.code} - #{response.message}"
         end
     when "paperMC"
-        abort("[ERROR] PaperMC is not available at this point in time")
+        url = URI.parse("#{$serverUrls[provider.to_sym]}#{software}")
+        response = Net::HTTP.get_response(url)
+        if response.is_a?(Net::HTTPSuccess) then
+            json_data = JSON.parse(response.body)
+            for version in json_data["versions"] do
+                versions.append(version)
+            end
+        else
+            puts "Error: #{response.code} - #{response.message}"
+        end
     end
     version = request_answer versions
     puts "-------------- [ #{version} ] --------------"
@@ -129,6 +138,16 @@ def complete_version(provider, software, version)
             puts "Error: #{response.code} - #{response.message}"
         end
     when "paperMC"
+        url = URI.parse("#{$serverUrls[provider.to_sym]}#{software}/versions/#{version}/builds")
+        response = Net::HTTP.get_response(url)
+        if response.is_a?(Net::HTTPSuccess) then
+            json_data = JSON.parse(response.body)
+            for build in json_data["builds"] do
+                builds[build["build"]] = build["downloads"]["application"]["name"]
+            end
+        else
+            puts "Error: #{response.code} - #{response.message}"
+        end
     end
     maxBuild = builds.keys[0]
     maxFile = builds.values[0]
@@ -139,6 +158,7 @@ def complete_version(provider, software, version)
                 maxFile = builds[key]
             end
     }
+    puts "[VERSION] Latest build is #{maxBuild}"
     return Version.new(provider, software, version, maxBuild, maxFile)
 end
 
@@ -209,6 +229,8 @@ def download_version(version)
         url = URI.parse("#{$serverUrls[version.provider.to_sym]}#{version.software}/#{version.version}/#{version.build}/#{version.file}")
         File.write(version.file, Net::HTTP.get(url))
     when "paperMC"
+        url = URI.parse("#{$serverUrls[version.provider.to_sym]}#{version.software}/versions/#{version.version}/builds/#{version.build}/downloads/#{version.file}")
+        File.write(version.file, Net::HTTP.get(url))
     end
 end
 
@@ -237,6 +259,9 @@ if !installation.nil? then
         installation = lastestVersion
     else
         puts "[VERSION] Up to date"
+
+        # Check eula
+        check_eula
     end
 else
     puts "-------------- [ software ] --------------"
@@ -266,8 +291,8 @@ while running do
     puts "-------------- [ stopped ] --------------"
 
     # Wait for restartTime seconds
-    10.downto(1) do |x|
-        puts "Waiting for #{x} seconds"
+    serverSettings.restartTime.downto(1) do |x|
+        puts "[RESTART] Waiting for #{x} seconds"
         sleep(1)
     end
 
