@@ -70,7 +70,7 @@ def request_number
 end
 
 def request_answer(values)
-    until $i > 10000 do
+    while true do
         $i = 0
         values.each {
           |item|
