@@ -1,12 +1,11 @@
+require 'optparse'
 require 'net/http'
 require 'json'
 
 $server_urls = {
-#    custom: "https://kienitz.link/host/minecraft/installer/", 
     paperMC: "https://api.papermc.io/v2/projects/" 
 }
 $software_types = {
-#    raper: "custom", 
     paper: "paperMC", 
     velocity: "paperMC" 
 }
@@ -55,6 +54,22 @@ class ServerSettings
         }.to_json(*args)
     end
 
+end
+
+def parse_arguments
+    options = {}
+    OptionParser.new do |option|
+        option.on("--custom") { |_|
+            options["custom"] = true
+        }
+        option.on("--software SOFTWARE") { |software|
+            options["software"] = software
+        }
+        option.on("--version VERSION") { |version|
+            options["version"] = version
+        }
+    end.parse!
+    options
 end
 
 def request_number
@@ -156,7 +171,7 @@ def complete_version(provider, software, version)
             puts "Error: #{response.code} - #{response.message}"
         end
     else
-        puts "Unknown provider: #{version.provider}"
+        puts "Unknown provider: #{provider}"
     end
     max_build = builds.keys[0]
     max_file = builds.values[0]
@@ -260,6 +275,12 @@ def update(old_version, new_version)
 end
 
 # Main
+options = parse_arguments
+if options.has_key?("custom")
+  $server_urls["custom".to_sym] = "https://kienitz.link/host/minecraft/installer/"
+  $software_types["raper".to_sym] = "custom"
+end
+
 server_settings = load_settings
 
 installation = check_installation
@@ -276,9 +297,16 @@ if !installation.nil?
     end
 else
     puts "-------------- [ software ] --------------"
-    software = request_software
+    software = options["software"].to_sym
+    unless options.has_key?("software")
+        software = request_software
+    end
     provider = $software_types[software]
-    version = request_software_version provider, software
+
+    version = options["version"].to_sym
+    unless options.has_key?("version")
+        version = request_software_version provider, software
+    end
     installation = complete_version provider, software, version
 
     # Check eula
