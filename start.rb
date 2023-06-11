@@ -2,13 +2,15 @@ require 'optparse'
 require 'net/http'
 require 'json'
 
-$server_urls = {
-    paperMC: "https://api.papermc.io/v2/projects/" 
-}
-$software_types = {
-    paper: "paperMC", 
-    velocity: "paperMC" 
-}
+$server_urls = {}
+$software_types = {}
+
+# Providers
+$server_urls["paperMC"] = "https://api.papermc.io/v2/projects/"
+
+# Software types
+$software_types["paper"] = "paperMC"
+$software_types["velocity"] = "paperMC"
 
 class Version 
 
@@ -115,7 +117,10 @@ def request_software_version(provider, software)
     puts "[NETWORK] Fetching versions..."
     case provider
     when "custom"
-        url = URI.parse("#{$server_urls[provider.to_sym]}#{software}/versions.json")
+        unless $server_urls.has_key?(provider)
+            enable_custom
+        end
+        url = URI.parse("#{$server_urls[provider]}#{software}/versions.json")
         response = Net::HTTP.get_response(url)
         if response.is_a?(Net::HTTPSuccess)
             json_data = JSON.parse(response.body)
@@ -126,7 +131,7 @@ def request_software_version(provider, software)
             puts "Error: #{response.code} - #{response.message}"
         end
     when "paperMC"
-        url = URI.parse("#{$server_urls[provider.to_sym]}#{software}")
+        url = URI.parse("#{$server_urls[provider]}#{software}")
         response = Net::HTTP.get_response(url)
         if response.is_a?(Net::HTTPSuccess)
             json_data = JSON.parse(response.body)
@@ -149,7 +154,10 @@ def complete_version(provider, software, version)
     puts "[NETWORK] Fetching builds..."
     case provider
     when "custom"
-        url = URI.parse("#{$server_urls[provider.to_sym]}#{software}/#{version}/builds.json")
+        unless $server_urls.has_key?(provider)
+            enable_custom
+        end
+        url = URI.parse("#{$server_urls[provider]}#{software}/#{version}/builds.json")
         response = Net::HTTP.get_response(url)
         if response.is_a?(Net::HTTPSuccess)
             json_data = JSON.parse(response.body)
@@ -160,7 +168,7 @@ def complete_version(provider, software, version)
             puts "Error: #{response.code} - #{response.message}"
         end
     when "paperMC"
-        url = URI.parse("#{$server_urls[provider.to_sym]}#{software}/versions/#{version}/builds")
+        url = URI.parse("#{$server_urls[provider]}#{software}/versions/#{version}/builds")
         response = Net::HTTP.get_response(url)
         if response.is_a?(Net::HTTPSuccess)
             json_data = JSON.parse(response.body)
@@ -250,10 +258,13 @@ def download_version(version)
     puts "[VERSION] Downloading... Depending on your internet connection, this may take some time"
     case version.provider
     when "custom"
-        url = URI.parse("#{$server_urls[version.provider.to_sym]}#{version.software}/#{version.version}/#{version.build}/#{version.file}")
+        unless $server_urls.has_key?(version.provider)
+            enable_custom
+        end
+        url = URI.parse("#{$server_urls[version.provider]}#{version.software}/#{version.version}/#{version.build}/#{version.file}")
         File.write(version.file, Net::HTTP.get(url))
     when "paperMC"
-        url = URI.parse("#{$server_urls[version.provider.to_sym]}#{version.software}/versions/#{version.version}/builds/#{version.build}/downloads/#{version.file}")
+        url = URI.parse("#{$server_urls[version.provider]}#{version.software}/versions/#{version.version}/builds/#{version.build}/downloads/#{version.file}")
         File.write(version.file, Net::HTTP.get(url))
     else
         puts "Unknown provider: #{version.provider}"
@@ -262,7 +273,9 @@ end
 
 def update(old_version, new_version)
     puts "[VERSION] Update found. Current version: #{old_version.build} | Latest version: #{new_version.build}"
-    File.delete(old_version.file)
+    if File.exist?(old_version.file)
+        File.delete(old_version.file)
+    end
 
     # Check eula
     check_eula
@@ -274,11 +287,16 @@ def update(old_version, new_version)
     write_version new_version
 end
 
+def enable_custom
+    puts "[CUSTOM] Enabling custom server versions..."
+    $server_urls["custom"] = "https://kienitz.link/host/minecraft/installer/"
+    $software_types["raper"] = "custom"
+end
+
 # Main
 options = parse_arguments
 if options.has_key?("custom")
-  $server_urls["custom".to_sym] = "https://kienitz.link/host/minecraft/installer/"
-  $software_types["raper".to_sym] = "custom"
+  enable_custom
 end
 
 server_settings = load_settings
@@ -297,15 +315,17 @@ if !installation.nil?
     end
 else
     puts "-------------- [ software ] --------------"
-    software = options["software"].to_sym
-    unless options.has_key?("software")
-        software = request_software
+    if options.has_key?("software")
+      software = options["software"]
+    else
+      software = request_software
     end
     provider = $software_types[software]
 
-    version = options["version"].to_sym
-    unless options.has_key?("version")
-        version = request_software_version provider, software
+    if options.has_key?("version")
+      version = options["version"]
+    else
+      version = request_software_version provider, software
     end
     installation = complete_version provider, software, version
 
@@ -322,7 +342,12 @@ end
 puts "-------------- [ restart loop ] --------------"
 running = true
 while running do
-    
+
+    unless File.exist?(installation.file)
+      puts "[VERSION] Jar file not found. Downloading..."
+      download_version installation
+    end
+
     # Start the server
     command = "#{server_settings.java_bin} #{server_settings.jvm_args} -jar #{installation.file} #{server_settings.server_args}"
     puts "[EXECUTE] #{command}"
