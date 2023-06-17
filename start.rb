@@ -120,11 +120,11 @@ def request_software_version(provider, software)
         unless $server_urls.has_key?(provider)
             enable_custom
         end
-        url = URI.parse("#{$server_urls[provider]}#{software}/versions.json")
+        url = URI.parse("#{$server_urls[provider]}#{software}")
         response = Net::HTTP.get_response(url)
         if response.is_a?(Net::HTTPSuccess)
             json_data = JSON.parse(response.body)
-            json_data.each { |version|
+            json_data["versions"].each { |version|
                 versions.append(version)
             }
         else
@@ -157,12 +157,12 @@ def complete_version(provider, software, version)
         unless $server_urls.has_key?(provider)
             enable_custom
         end
-        url = URI.parse("#{$server_urls[provider]}#{software}/#{version}/builds.json")
+        url = URI.parse("#{$server_urls[provider]}#{software}/versions/#{version}/builds")
         response = Net::HTTP.get_response(url)
         if response.is_a?(Net::HTTPSuccess)
             json_data = JSON.parse(response.body)
-            json_data.each { |build|
-                builds[build["build"]] = build["file"]
+            json_data["builds"].each { |build|
+                builds[build["build"]] = build["downloads"]["application"]["name"]
             }
         else
             puts "Error: #{response.code} - #{response.message}"
@@ -261,7 +261,7 @@ def download_version(version)
         unless $server_urls.has_key?(version.provider)
             enable_custom
         end
-        url = URI.parse("#{$server_urls[version.provider]}#{version.software}/#{version.version}/#{version.build}/#{version.file}")
+        url = URI.parse("#{$server_urls[version.provider]}#{version.software}/versions/#{version.version}/builds/#{version.build}/downloads/#{version.file}")
         File.write(version.file, Net::HTTP.get(url))
     when "paperMC"
         url = URI.parse("#{$server_urls[version.provider]}#{version.software}/versions/#{version.version}/builds/#{version.build}/downloads/#{version.file}")
@@ -289,7 +289,7 @@ end
 
 def enable_custom
     puts "[CUSTOM] Enabling custom server versions..."
-    $server_urls["custom"] = "https://kienitz.link/host/minecraft/installer/"
+    $server_urls["custom"] = "https://api.rafa.run/v1/projects/"
     $software_types["raper"] = "custom"
 end
 
