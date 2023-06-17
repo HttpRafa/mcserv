@@ -5,9 +5,9 @@ A simple minecraft server installer written in Ruby
 ## Usage
 > This script requires Ruby to be installed
 > 
-> **Windows:** [Download](https://raw.githubusercontent.com/HttpRafa/Minecraft-Server-Installer/main/start.rb) and run `ruby start.rb` in a new termimal
+> **Windows:** [Download](https://raw.githubusercontent.com/HttpRafa/minecraft-server-installer/main/start.rb) and run `ruby start.rb` in a new termimal
 > 
-> **Linux:** `curl -o start.rb https://raw.githubusercontent.com/HttpRafa/Minecraft-Server-Installer/main/start.rb && ruby start.rb`
+> **Linux:** `curl -o start.rb https://raw.githubusercontent.com/HttpRafa/minecraft-server-installer/main/start.rb && ruby start.rb`
 
 ## Install Ruby
 > **Windows:** [Download the Ruby Installer](https://rubyinstaller.org/downloads/)
