@@ -1,4 +1,5 @@
 require 'optparse'
+require 'open-uri'
 require 'net/http'
 require 'json'
 
@@ -12,7 +13,7 @@ $server_urls["paperMC"] = "https://api.papermc.io/v2/projects/"
 $software_types["paper"] = "paperMC"
 $software_types["velocity"] = "paperMC"
 
-class Version 
+class Version
 
     attr_reader :provider, :software, :version, :build, :file
 
@@ -26,17 +27,17 @@ class Version
 
     def to_json(*args)
         {
-            provider: @provider,
-            software: @software,
-            version: @version,
-            build: @build,
-            file: @file
+          provider: @provider,
+          software: @software,
+          version: @version,
+          build: @build,
+          file: @file
         }.to_json(*args)
     end
 
 end
 
-class ServerSettings 
+class ServerSettings
 
     attr_reader :java_bin, :restart_time, :jvm_args, :server_args
 
@@ -184,11 +185,11 @@ def complete_version(provider, software, version)
     max_build = builds.keys[0]
     max_file = builds.values[0]
     builds.each {
-        | key, _|
-            if key > max_build
-                max_build = key
-                max_file = builds[key]
-            end
+      | key, _|
+        if key > max_build
+            max_build = key
+            max_file = builds[key]
+        end
     }
     puts "[VERSION] Latest build is #{max_build}"
     Version.new(provider, software, version, max_build, max_file)
@@ -261,11 +262,21 @@ def download_version(version)
         unless $server_urls.has_key?(version.provider)
             enable_custom
         end
-        url = URI.parse("#{$server_urls[version.provider]}#{version.software}/versions/#{version.version}/builds/#{version.build}/downloads/#{version.file}")
-        File.write(version.file, Net::HTTP.get(url))
+        url = "#{$server_urls[version.provider]}#{version.software}/versions/#{version.version}/builds/#{version.build}/downloads/#{version.file}"
+        puts "[VERSION] Server: #{url}"
+        File.open(version.file, "wb") do |saved_file|
+            OpenURI::open_uri(url, "rb") do |read_file|
+                saved_file.write(read_file.read)
+            end
+        end
     when "paperMC"
         url = URI.parse("#{$server_urls[version.provider]}#{version.software}/versions/#{version.version}/builds/#{version.build}/downloads/#{version.file}")
-        File.write(version.file, Net::HTTP.get(url))
+        puts "[VERSION] Server: #{url}"
+        File.open(version.file, "wb") do |saved_file|
+            OpenURI::open_uri(url, "rb") do |read_file|
+                saved_file.write(read_file.read)
+            end
+        end
     else
         puts "Unknown provider: #{version.provider}"
     end
@@ -296,7 +307,7 @@ end
 # Main
 options = parse_arguments
 if options.has_key?("custom")
-  enable_custom
+    enable_custom
 end
 
 server_settings = load_settings
@@ -316,16 +327,16 @@ if !installation.nil?
 else
     puts "-------------- [ software ] --------------"
     if options.has_key?("software")
-      software = options["software"]
+        software = options["software"]
     else
-      software = request_software
+        software = request_software
     end
     provider = $software_types[software]
 
     if options.has_key?("version")
-      version = options["version"]
+        version = options["version"]
     else
-      version = request_software_version provider, software
+        version = request_software_version provider, software
     end
     installation = complete_version provider, software, version
 
@@ -344,8 +355,8 @@ running = true
 while running do
 
     unless File.exist?(installation.file)
-      puts "[VERSION] Jar file not found. Downloading..."
-      download_version installation
+        puts "[VERSION] Jar file not found. Downloading..."
+        download_version installation
     end
 
     # Start the server
