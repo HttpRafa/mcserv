@@ -195,7 +195,7 @@ def complete_version(provider, software, version)
 end
 
 def check_eula
-    if File.exists?("installation.json") && File.read("eula.txt").include?("eula=true")
+    if File.exist?("installation.json") && File.read("eula.txt").include?("eula=true")
         puts "[EULA] Accepted"
     else
         puts "-------------- [ eula ] --------------"
@@ -209,7 +209,7 @@ def check_eula
 end
 
 def load_settings
-    if !File.exists?("settings.json")
+    if !File.exist?("settings.json")
         puts "[SCRIPT] No settings found"
         puts "[SETTINGS] Please enter the amount of RAM(in MB) the server should have"
         ram = request_number # Not further checks if the user enters -1 or something very big how cares
@@ -228,7 +228,7 @@ def load_settings
 end
 
 def check_installation
-    if !File.exists?("installation.json")
+    if !File.exist?("installation.json")
         puts "[SCRIPT] Script is running for the first time"
         nil
     else
