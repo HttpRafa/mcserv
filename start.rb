@@ -301,7 +301,7 @@ end
 def enable_custom
     puts "[CUSTOM] Enabling custom server versions..."
     $server_urls["custom"] = "https://api.rafa.run/v1/projects/"
-    $software_types["raper"] = "custom"
+    $software_types["raa"] = "custom"
 end
 
 # Main
