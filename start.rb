@@ -71,6 +71,9 @@ def parse_arguments
         option.on("--version VERSION") { |version|
             options["version"] = version
         }
+        option.on("--file FILE") { |file|
+            options["file"] = file
+        }
     end.parse!
     options
 end
@@ -312,42 +315,43 @@ end
 
 server_settings = load_settings
 
-installation = check_installation
-if !installation.nil?
-    latest_version = check_for_updates installation
-    if !latest_version.nil?
-        update installation, latest_version
-        installation = latest_version
-    else
-        puts "[VERSION] Up to date"
+# Check eula
+check_eula
 
-        # Check eula
-        check_eula
-    end
+if options.has_key?("file")
+    installation = Version.new(nil, nil, nil, nil, options["file"])
 else
-    puts "-------------- [ software ] --------------"
-    if options.has_key?("software")
-        software = options["software"]
+    installation = check_installation
+    if !installation.nil?
+        latest_version = check_for_updates installation
+        if !latest_version.nil?
+            update installation, latest_version
+            installation = latest_version
+        else
+            puts "[VERSION] Up to date"
+        end
     else
-        software = request_software
+        puts "-------------- [ software ] --------------"
+        if options.has_key?("software")
+            software = options["software"]
+        else
+            software = request_software
+        end
+        provider = $software_types[software]
+
+        if options.has_key?("version")
+            version = options["version"]
+        else
+            version = request_software_version provider, software
+        end
+        installation = complete_version provider, software, version
+
+        # Install version
+        download_version installation
+
+        # Write version information
+        write_version installation
     end
-    provider = $software_types[software]
-
-    if options.has_key?("version")
-        version = options["version"]
-    else
-        version = request_software_version provider, software
-    end
-    installation = complete_version provider, software, version
-
-    # Check eula
-    check_eula
-
-    # Install version
-    download_version installation
-
-    # Write version information
-    write_version installation
 end
 
 puts "-------------- [ restart loop ] --------------"
@@ -372,11 +376,13 @@ while running do
     end
 
     # Check for updates
-    latest_version = check_for_updates installation
-    if !latest_version.nil?
-        update installation, latest_version
-        installation = latest_version
-    else
-        puts "[VERSION] Up to date"
+    unless installation.provider.nil?
+        latest_version = check_for_updates installation
+        if !latest_version.nil?
+            update installation, latest_version
+            installation = latest_version
+        else
+            puts "[VERSION] Up to date"
+        end
     end
 end
