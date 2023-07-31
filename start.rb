@@ -11,7 +11,9 @@ $server_urls["paperMC"] = "https://api.papermc.io/v2/projects/"
 
 # Software types
 $software_types["paper"] = "paperMC"
+$software_types["folia"] = "paperMC"
 $software_types["velocity"] = "paperMC"
+$software_types["waterfall"] = "paperMC"
 
 class Version
 
