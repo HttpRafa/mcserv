@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 use log::error;
 use serde::{Deserialize, Serialize};
+use crate::server::provider::Version;
 
 const SERVER_FILENAME: &str = "server.toml";
 
@@ -9,9 +10,7 @@ const SERVER_FILENAME: &str = "server.toml";
 pub struct Configuration {
     pub min_memory: Option<u32>,
     pub max_memory: Option<u32>,
-    pub software: Option<String>,
-    pub version: Option<String>,
-
+    pub version: Option<Version>,
 }
 
 impl Configuration {
@@ -26,7 +25,6 @@ fn create_empty_server_configuration() -> Configuration {
     return Configuration {
         min_memory: None,
         max_memory: None,
-        software: None,
         version: None,
     }
 }

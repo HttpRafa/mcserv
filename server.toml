@@ -1,2 +1,5 @@
 min_memory = 1024
 max_memory = 2048
+
+[version]
+software = "jkj"
