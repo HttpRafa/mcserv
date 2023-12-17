@@ -8,4 +8,12 @@ log = "0.4.20"
 simplelog = "0.12.1"
 clap = "4.4.11"
 toml = "0.8.8"
+json = "0.12.4"
+minreq = { version = "2.11.0", features = ["https-native"] }
 serde = { version = "1.0.193", features = ["derive"] }
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
