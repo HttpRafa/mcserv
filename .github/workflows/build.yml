@@ -26,9 +26,9 @@ jobs:
           cargo build --release --target ${{ matrix.target.platform }}
       - name: Copy files
         run: |
-          mv target/${{ matrix.target.platform }}/release/installer${{matrix.target.extension }} installer${{ matrix.target.extension }}
+          mv target/${{ matrix.target.platform }}/release/mcserv${{matrix.target.extension }} mcserv${{ matrix.target.extension }}
       - name: Upload files
         uses: actions/upload-artifact@v4
         with:
           name: '${{ matrix.target.name }}'
-          path: 'installer${{ matrix.target.extension }}'
+          path: 'mcserv${{ matrix.target.extension }}'
